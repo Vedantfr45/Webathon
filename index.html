@@ -5,368 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#e4e6eb">
 <title>LumenGrid – Smart Streetlight Control</title>
-<meta name="description" content="LumenGrid: a dashboard to control simulated streetlights and track power, energy and cost.">
+<meta name="description" content="LumenGrid: a simulated smart-streetlight dashboard to control 12 lights, automate schedules, manage faults and track energy, cost and savings.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>try{if(localStorage.getItem('lumen-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
-<style>
-  :root{
-    --bg:#e4e6eb; --hi:#ffffff; --lo:#bcc1cc;
-    --text:#353a46; --muted:#8c92a1;
-    --amber:#f2a516; --amber-soft:#ffcf6b;
-    --red:#e5484d; --green:#3fae6a; --blue:#5b8def;
-    --raise:  7px 7px 16px var(--lo), -7px -7px 16px var(--hi);
-    --raise-sm: 4px 4px 9px var(--lo), -4px -4px 9px var(--hi);
-    --raise-lg: 12px 12px 26px var(--lo), -12px -12px 26px var(--hi);
-    --inset:  inset 4px 4px 9px var(--lo), inset -4px -4px 9px var(--hi);
-    --inset-sm: inset 2px 2px 5px var(--lo), inset -2px -2px 5px var(--hi);
-    --r-lg:30px; --r-md:22px; --r-sm:14px;
-    --ease:cubic-bezier(.2,.8,.2,1);
-    --text-hi:#000; --amber-text:#c27f00;
-    --tick-off:#cfd3db; --glass-off:#d3d7df; --outline-off:#9aa0ad;
-  }
-  html[data-theme="dark"]{
-    --bg:#23262e; --hi:#2e323c; --lo:#17191f;
-    --text:#e7e9ef; --muted:#8e94a4;
-    --text-hi:#fff; --amber-text:#f4b84a;
-    --amber:#f5b132; --amber-soft:#ffd27a;
-    --tick-off:#3a3e49; --glass-off:#3a3f4b; --outline-off:#6a7083;
-    color-scheme:dark;
-  }
-  body,header,.neu,.neu-md,.well,.btn,.tile,.rowi,.chart-box,.badge,.switch,.navpill,.toast,.chip{transition-property:background-color,color,box-shadow,transform,border-color;transition-duration:.35s}
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html{scroll-behavior:smooth;color-scheme:light}
-  body{font-family:'Poppins',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;touch-action:manipulation}
-  button{font-family:inherit;color:inherit}
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
-
-  /* ---------- Neumorphic primitives ---------- */
-  .neu{background:var(--bg);border-radius:var(--r-lg);box-shadow:var(--raise-lg)}
-  .neu-md{background:var(--bg);border-radius:var(--r-md);box-shadow:var(--raise)}
-  .well{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;background:var(--bg);box-shadow:var(--inset-sm);color:var(--muted)}
-  .well svg{width:19px;height:19px}
-  .dots{display:flex;gap:5px}
-  .dots i{width:7px;height:7px;border-radius:50%;background:var(--muted);opacity:.8}
-  .btn{font-size:.8rem;font-weight:500;cursor:pointer;border:0;padding:9px 16px;border-radius:999px;background:var(--bg);box-shadow:var(--raise-sm);color:var(--text);transition:box-shadow .25s var(--ease),color .2s ease,transform .25s var(--ease);display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
-  .btn:hover{color:var(--text-hi)}
-  .btn:active{box-shadow:var(--inset-sm);transform:scale(.98)}
-  .btn:focus-visible,.tile:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
-  .hidden{display:none !important}
-
-  /* ---------- HEADER ---------- */
-  header{padding:26px 0 8px}
-  .head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
-  .brand{display:flex;align-items:center;gap:14px}
-  .logo{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--bg);box-shadow:var(--raise)}
-  .logo span{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;box-shadow:var(--inset-sm)}
-  .logo svg{width:22px;height:22px}
-  .brand h1{font-size:1.25rem;font-weight:600;letter-spacing:-.01em;line-height:1.15}
-  .brand p{font-size:.78rem;color:var(--muted)}
-  .hello{display:flex;align-items:center;gap:22px;padding:12px 22px 12px 24px;border-radius:999px}
-  .hello b{display:block;font-size:.9rem;font-weight:500}
-  .hello small{font-size:.74rem;color:var(--muted)}
-  .head-right{display:flex;align-items:center;gap:14px}
-  .theme-btn{width:52px;height:52px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:var(--bg);box-shadow:var(--raise);color:var(--text);transition:box-shadow .25s var(--ease),transform .25s var(--ease)}
-  .theme-btn:hover{transform:translateY(-1px)}
-  .theme-btn:active{box-shadow:var(--inset-sm);transform:scale(.97)}
-  .theme-btn:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
-  .theme-btn svg{width:21px;height:21px}
-  .theme-btn .i-moon{display:none}
-  html[data-theme="dark"] .theme-btn .i-sun{display:none}
-  html[data-theme="dark"] .theme-btn .i-moon{display:block}
-  .live{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(63,174,106,.18);animation:pulse 1.8s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-
-  main{padding:8px 0 30px}
-
-  /* ---------- SECTION NAV (sticky) ---------- */
-  .navbar{position:sticky;top:12px;z-index:50;display:flex;justify-content:center;padding:0 24px;margin:12px 0 6px;pointer-events:none}
-  .navpill{pointer-events:auto;display:flex;gap:6px;padding:6px;border-radius:999px;background:var(--bg);box-shadow:var(--raise);max-width:100%;overflow-x:auto;scrollbar-width:none}
-  .navpill::-webkit-scrollbar{display:none}
-  .navpill a{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;font-size:.82rem;font-weight:500;color:var(--muted);white-space:nowrap;transition:color .25s ease,box-shadow .35s var(--ease)}
-  .navpill a::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.35;transition:background .25s,opacity .25s,box-shadow .25s}
-  .navpill a:hover{color:var(--text)}
-  .navpill a.active{color:var(--text);box-shadow:var(--inset-sm)}
-  .navpill a.active::before{background:var(--amber);opacity:1;box-shadow:0 0 8px var(--amber)}
-  .navpill a:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
-  #scene-sec,#overview{scroll-margin-top:84px}
-  .label{font-size:.74rem;font-weight:500;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin:44px 0 18px 6px;scroll-margin-top:84px}
-
-  /* ---------- LIVE STREET SCENE (the unique bit) ---------- */
-  .scene-frame{padding:10px;border-radius:38px;margin-bottom:30px}
-  .scene{position:relative;border-radius:28px;overflow:hidden;isolation:isolate;
-    --sky1:#0b1026;--sky2:#1b2447;--night:1;--far:#181f3e;--near:#10152b;--road:#171a24;--walk:#2a2e3d;--pole:#4a5270;
-    background:linear-gradient(180deg,var(--sky1),var(--sky2));
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
-  .hud{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;padding:14px 16px 0}
-  .hud-pill{background:rgba(12,15,28,.55);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:999px;display:flex;align-items:center;gap:12px}
-  .time{padding:10px 22px 10px 18px}
-  .clock-big{font-size:2.1rem;font-weight:600;letter-spacing:.02em;line-height:1;font-variant-numeric:tabular-nums}
-  .time .phase{font-size:.86rem;font-weight:500;line-height:1.2}
-  .time small{display:block;font-size:.7rem;color:rgba(255,255,255,.72);margin-top:1px}
-  .hud-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .auto{padding:8px 12px 8px 18px;cursor:pointer;user-select:none}
-  .auto b{display:block;font-size:.82rem;font-weight:500;line-height:1.2}
-  .auto small{font-size:.68rem;color:rgba(255,255,255,.7);white-space:nowrap}
-  .sw{position:relative;width:42px;height:24px;flex-shrink:0}
-  .sw input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;width:100%;height:100%;z-index:2}
-  .sw i{position:absolute;inset:0;border-radius:999px;background:rgba(255,255,255,.22);transition:background .3s}
-  .sw i::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .35s cubic-bezier(.5,1.5,.4,1)}
-  .sw input:checked + i{background:var(--amber)}
-  .sw input:checked + i::after{transform:translateX(18px)}
-  .sw input:focus-visible + i{outline:2px solid #fff;outline-offset:2px}
-  .hud-btn{font-family:inherit;font-size:.78rem;font-weight:500;color:#fff;cursor:pointer;padding:10px 16px;background:rgba(12,15,28,.55);border:1px solid rgba(255,255,255,.14);border-radius:999px;transition:background .2s,opacity .2s,transform .2s}
-  .hud-btn:hover{background:rgba(12,15,28,.75)}
-  .hud-btn:active{transform:scale(.97)}
-  .hud-btn:disabled{opacity:.45;cursor:progress}
-  .hud-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
-  .scene-scroll{position:relative;z-index:1;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .scene-scroll::-webkit-scrollbar{display:none}
-  #sceneSvg{display:block;width:100%;min-width:780px;height:auto}
-  @media (min-width:900px){ .hud{position:absolute;top:0;left:0;right:0} }
-
-  #sceneSvg .stars{opacity:var(--night)}
-  #sceneSvg .star{fill:#fff;animation:twinkle 3.2s ease-in-out infinite alternate}
-  @keyframes twinkle{from{opacity:.25}to{opacity:1}}
-  #sceneSvg .clouds{opacity:calc((1 - var(--night)) * .85)}
-  #sceneSvg .cloud{fill:rgba(255,255,255,.9);animation:drift 110s linear infinite}
-  @keyframes drift{from{transform:translateX(-160px)}to{transform:translateX(1360px)}}
-  #sceneSvg .far rect{fill:var(--far)}
-  #sceneSvg .near rect{fill:var(--near)}
-  #sceneSvg .windows{opacity:calc(.2 + .8 * var(--night))}
-  #sceneSvg .windows rect{fill:#ffd27a}
-  #sceneSvg .walk{fill:var(--walk)}
-  #sceneSvg .road{fill:var(--road)}
-  #sceneSvg .lane{stroke:rgba(255,255,255,.3);stroke-width:2;stroke-dasharray:20 16}
-  #sceneSvg .divider{stroke:rgba(255,255,255,.22);stroke-width:2;stroke-dasharray:4 5}
-  #sceneSvg .zone-label{fill:rgba(255,255,255,.42);font-size:11px;letter-spacing:3px;font-weight:500}
-  #sceneSvg .lamp{cursor:pointer;outline:none}
-  #sceneSvg .lamp .hit{fill:transparent}
-  #sceneSvg .lamp:focus-visible .hit{stroke:#fff;stroke-width:2;rx:12}
-  #sceneSvg .lamp .pole{stroke:var(--pole);stroke-width:4;fill:none;stroke-linecap:round}
-  #sceneSvg .lamp .base{fill:var(--pole)}
-  #sceneSvg .lamp .head{fill:#59607a;transition:fill .5s ease}
-  #sceneSvg .lamp .cone{fill:url(#coneGrad);opacity:0;transition:opacity .6s ease}
-  #sceneSvg .lamp .pool{fill:url(#poolGrad);opacity:0;transition:opacity .6s ease}
-  #sceneSvg .lamp .halo{fill:url(#haloGrad);opacity:0;transition:opacity .6s ease}
-  #sceneSvg .lamp.on .head{fill:#ffe9ad}
-  #sceneSvg .lamp.on .cone{opacity:calc(var(--b) * (.22 + .78 * var(--night)))}
-  #sceneSvg .lamp.on .pool{opacity:calc(var(--b) * (.3 + .7 * var(--night)))}
-  #sceneSvg .lamp.on .halo{opacity:calc(var(--b) * (.35 + .65 * var(--night)))}
-  #sceneSvg .lamp.fault .head{fill:var(--red);animation:blink 1s steps(2) infinite}
-  @keyframes blink{50%{opacity:.25}}
-  #sceneSvg .lamp-id{fill:rgba(255,255,255,.5);font-size:11px;font-weight:500;text-anchor:middle;transition:fill .2s}
-  #sceneSvg .lamp:hover .lamp-id{fill:#fff}
-
-  /* ---------- TOP LAYOUT ---------- */
-  .top{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:30px;align-items:start}
-  .left-col{display:grid;gap:30px}
-  .gauge-card{padding:24px 26px 22px}
-  .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-  .card-head .t{display:flex;align-items:center;gap:12px}
-  .card-head h3{font-size:1rem;font-weight:600}
-  .card-head p{font-size:.76rem;color:var(--muted)}
-  .chip{display:inline-flex;align-items:center;font-size:.72rem;color:var(--muted);padding:5px 12px;border-radius:999px;box-shadow:var(--inset-sm);white-space:nowrap}
-  .gauge{position:relative;max-width:420px;margin:6px auto 0}
-  .gauge svg{width:100%;height:auto;display:block}
-  .gauge .tick{stroke:var(--tick-off);stroke-width:3;stroke-linecap:round;transition:stroke .15s ease}
-  .gauge .tick.on{stroke:var(--text)}
-  .gauge .tick.on.hot{stroke:var(--amber)}
-  #gNeedle{transform-origin:160px 150px;transform-box:view-box}
-  .g-center{position:absolute;left:0;right:0;bottom:8%;text-align:center}
-  .g-center b{font-size:3rem;font-weight:500;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
-  .g-center b small{font-size:1.3rem;font-weight:400;margin-left:2px}
-  .g-center .cap{display:block;font-size:.8rem;color:var(--muted);margin-top:4px}
-
-  .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
-  .tile{text-align:left;border:0;cursor:pointer;padding:20px;min-height:158px;display:flex;flex-direction:column;justify-content:space-between;background:var(--bg);border-radius:var(--r-md);box-shadow:var(--raise);transition:box-shadow .3s var(--ease),transform .3s var(--ease)}
-  @media (hover:hover){ .tile:hover{transform:translateY(-3px)} }
-  .tile:active{box-shadow:var(--inset);transform:scale(.99)}
-  .tile .row{display:flex;justify-content:space-between;align-items:center;width:100%}
-  .tile h4{display:block;font-size:.98rem;font-weight:600;margin-top:24px}
-  .tile p{display:block;font-size:.74rem;color:var(--muted);margin-top:2px}
-  .tile.on-tile .well{color:var(--amber)}
-  .tile.eco-tile .well{color:var(--green)}
-
-  .saved{padding:20px 22px 22px}
-  .saved .top-row{display:flex;align-items:center;gap:14px}
-  .saved .info{flex:1;min-width:0}
-  .saved .info b{display:block;font-size:.9rem;font-weight:600}
-  .saved .info small{font-size:.74rem;color:var(--muted)}
-  .saved .val{text-align:right;white-space:nowrap}
-  .saved .val strong{font-size:1.5rem;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums}
-  .saved .val strong small{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:2px}
-  .saved .val em{display:block;font-style:normal;font-size:.74rem;color:var(--muted)}
-  .meter{height:10px;border-radius:10px;box-shadow:var(--inset-sm);margin-top:16px;overflow:hidden}
-  .meter span{display:block;height:100%;width:0;border-radius:10px;background:linear-gradient(90deg,#7bd8a0,var(--green));transition:width .9s var(--ease)}
-
-  .list-card{padding:24px 22px 26px}
-  .rows{display:grid;gap:18px;margin-top:22px}
-  .rowi{display:flex;align-items:center;gap:14px;padding:14px 18px 14px 14px;border-radius:var(--r-md);background:var(--bg);box-shadow:var(--raise);transition:box-shadow .3s}
-  .rowi .info{flex:1;min-width:0}
-  .rowi b{display:block;font-size:.88rem;font-weight:500}
-  .rowi small{font-size:.74rem;color:var(--muted)}
-  .rowi .val{font-size:1.15rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .rowi .val small{font-size:.72rem;font-weight:400;margin-left:2px}
-  .rowi.alert{box-shadow:var(--raise), inset 0 0 0 2px rgba(229,72,77,.35)}
-  .rowi.alert .well,.rowi.alert .val{color:var(--red)}
-  .rowi.amber .val{color:var(--amber-text)}
-
-  /* ---------- ZONES ---------- */
-  .zone{margin-top:34px}
-  .zone-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:0 4px}
-  .zone-name{display:flex;align-items:center;gap:14px}
-  .zone-name .well{width:40px;height:40px}
-  .zone-name .well i{width:10px;height:10px;border-radius:50%;background:var(--zc);box-shadow:0 0 8px var(--zc)}
-  .zone-name h3{font-size:1.05rem;font-weight:600}
-  .zone-name p{font-size:.76rem;color:var(--muted)}
-  .zone-actions{display:flex;gap:12px}
-  .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:26px}
-  .light{padding:20px;--b:0;transition:box-shadow .4s ease,transform .35s var(--ease)}
-  @media (hover:hover){ .light:hover{transform:translateY(-3px)} }
-  .light-top{display:flex;justify-content:space-between;align-items:flex-start}
-  .bulb{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--bg);box-shadow:var(--inset);transition:box-shadow .5s ease}
-  .bulb svg{width:28px;height:28px;transition:filter .5s ease}
-  .bulb .glass-fill{fill:var(--glass-off);transition:fill .5s ease}
-  .bulb .outline{stroke:var(--outline-off);transition:stroke .5s ease}
-  .bulb .rays{opacity:0;stroke:var(--amber);transition:opacity .5s ease}
-  .light.is-on .bulb{box-shadow:var(--raise-sm), 0 0 calc(10px + var(--b)*26px) rgba(242,165,22,calc(.15 + var(--b)*.4))}
-  .light.is-on .bulb .glass-fill{fill:var(--amber-soft)}
-  .light.is-on .bulb .outline{stroke:var(--amber)}
-  .light.is-on .bulb .rays{opacity:var(--b)}
-  .light.is-on .bulb svg{filter:drop-shadow(0 0 calc(2px + var(--b)*6px) rgba(242,165,22,.9))}
-  .light.is-fault{box-shadow:var(--raise-lg), inset 0 0 0 2px rgba(229,72,77,.35)}
-  .light.is-fault .bulb .glass-fill{fill:#f3a5a7;animation:flicker 1.2s infinite}
-  .light.is-fault .bulb .outline{stroke:var(--red)}
-  @keyframes flicker{0%,100%{opacity:1}40%{opacity:.3}45%{opacity:1}60%{opacity:.4}}
-  .light.pop .bulb{animation:pop .45s ease}
-  @keyframes pop{40%{transform:scale(1.1)}}
-  .badge{font-size:.7rem;font-weight:500;padding:5px 11px;border-radius:999px;box-shadow:var(--inset-sm);display:inline-flex;align-items:center;gap:6px;color:var(--muted);transition:color .3s}
-  .badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-  .badge.on{color:var(--amber-text)}
-  .badge.dimmed{color:var(--blue)}
-  .badge.fault{color:var(--red)}
-  .light h4{font-size:1rem;font-weight:600;margin-top:18px}
-  .light .sub{font-size:.74rem;color:var(--muted)}
-  .slider-row{margin-top:18px}
-  .slider-row .lbl{display:flex;justify-content:space-between;font-size:.74rem;color:var(--muted);margin-bottom:10px}
-  .slider-row .lbl b{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums}
-  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:10px;outline:none;cursor:pointer;background:linear-gradient(90deg,var(--amber) 0,var(--amber-soft) var(--v,0%),transparent var(--v,0%));box-shadow:var(--inset-sm)}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:var(--bg);box-shadow:3px 3px 6px var(--lo),-3px -3px 6px var(--hi);border:0;cursor:pointer}
-  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--bg);border:0;box-shadow:3px 3px 6px var(--lo),-3px -3px 6px var(--hi)}
-  input[type=range]:disabled{opacity:.45;cursor:not-allowed}
-  input[type=range]:focus-visible{outline:2px solid var(--amber);outline-offset:5px}
-  .meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:20px}
-  .watts{font-size:1.25rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .watts small{font-size:.74rem;font-weight:400;color:var(--muted)}
-  .switch{position:relative;display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:4px 4px 4px 12px;border-radius:999px;box-shadow:var(--inset-sm);user-select:none}
-  .switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:2;width:100%;height:100%}
-  .switch .txt{font-size:.74rem;color:var(--muted);min-width:22px}
-  .switch .knob{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--bg);box-shadow:2px 2px 5px var(--lo),-2px -2px 5px var(--hi);color:var(--muted);transition:color .3s,box-shadow .3s}
-  .switch .knob svg{width:14px;height:14px}
-  .switch input:checked ~ .knob{color:var(--amber);box-shadow:2px 2px 5px var(--lo),-2px -2px 5px var(--hi),0 0 10px rgba(242,165,22,.45)}
-  .switch input:checked ~ .txt{color:var(--text)}
-  .switch input:focus-visible ~ .knob{outline:2px solid var(--amber);outline-offset:2px}
-  .switch input:disabled{cursor:not-allowed}
-  .switch.disabled{opacity:.45}
-  .repair{margin-top:16px;width:100%;justify-content:center;color:var(--red);font-weight:600}
-
-  /* ---------- CHARTS ---------- */
-  .charts{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:30px}
-  .chart-card{padding:24px;min-width:0}
-  .chart-card .now{font-size:1.3rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .chart-box{position:relative;height:250px;margin-top:18px;border-radius:var(--r-sm);box-shadow:var(--inset-sm);padding:12px 10px 6px}
-
-  /* ---------- TOAST ---------- */
-  #toasts{position:fixed;right:22px;bottom:22px;z-index:60;display:flex;flex-direction:column;gap:12px;max-width:calc(100vw - 44px)}
-  .toast{display:flex;align-items:center;gap:12px;padding:10px 18px 10px 10px;border-radius:999px;font-size:.84rem;background:var(--bg);box-shadow:var(--raise);animation:tin .4s var(--ease)}
-  .toast .well{width:34px;height:34px;font-size:.95rem}
-  .toast.out{animation:tout .3s ease forwards}
-  @keyframes tin{from{opacity:0;transform:translateY(14px)}}
-  @keyframes tout{to{opacity:0;transform:translateX(30px)}}
-
-  footer{padding:30px 0 36px}
-  .foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 24px;border-radius:999px;font-size:.82rem;color:var(--muted)}
-  .foot b{color:var(--text);font-weight:600}
-
-  /* scroll reveal: animate in once, then drop the animation so hover transforms work */
-  .reveal{opacity:0}
-  .reveal.in{animation:rise .75s var(--ease) both}
-  .reveal.done{opacity:1;animation:none;transform:none}
-  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-
-  /* ---------- RESPONSIVE ---------- */
-  @media (max-width:1100px){
-    .top{grid-template-columns:minmax(0,1fr)}
-    .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .charts{grid-template-columns:minmax(0,1fr)}
-  }
-  @media (max-width:640px){
-    :root{--raise-lg:8px 8px 18px var(--lo),-8px -8px 18px var(--hi);--raise:5px 5px 12px var(--lo),-5px -5px 12px var(--hi)}
-    .wrap{padding:0 16px}
-    header{padding-top:18px}
-    .navbar{padding:0 16px;top:8px}
-    .navpill a{padding:9px 14px;font-size:.78rem}
-    .hello{flex:1;min-width:0;padding:10px 16px;gap:10px;justify-content:space-between}
-    .head-right{width:100%}
-    .theme-btn{width:48px;height:48px}
-    .scene-frame{padding:7px;border-radius:30px;margin-bottom:22px}
-    .scene{border-radius:24px}
-    .hud{padding:12px 12px 0}
-    .clock-big{font-size:1.7rem}
-    .time{padding:8px 16px 8px 14px}
-    .hud-right{width:100%}
-    .auto{flex:1 1 100%;justify-content:space-between}
-    .hud-btn{padding:10px 13px;flex:1}
-    .left-col,.top{gap:22px}
-    .gauge-card{padding:18px}
-    .tiles{gap:12px}
-    .tile{padding:14px;min-height:128px}
-    .tile h4{font-size:.86rem;margin-top:14px}
-    .tile p{font-size:.68rem}
-    .tile .dots{display:none}
-    .tile .well{width:38px;height:38px}
-    .saved{padding:16px}
-    .list-card{padding:18px}
-    .rows{gap:14px}
-    .zone-name{gap:10px}
-    .zone-name .well{width:34px;height:34px}
-    .zone-name h3{font-size:.95rem}
-    .zone-actions{gap:8px}
-    .zone-actions .btn{padding:7px 11px;font-size:.72rem}
-    .grid{gap:14px}
-    .light{padding:14px;border-radius:var(--r-md)}
-    .bulb{width:46px;height:46px}
-    .bulb svg{width:22px;height:22px}
-    .light h4{font-size:.9rem;margin-top:12px}
-    .light .sub{font-size:.66rem}
-    .badge{padding:4px 8px;font-size:.62rem}
-    .watts{font-size:.95rem}
-    .switch{padding:3px 3px 3px 8px;gap:4px}
-    .switch .txt{font-size:.64rem;min-width:18px}
-    .switch .knob{width:24px;height:24px}
-    .g-center b{font-size:2.3rem}
-    .chart-box{height:220px}
-    .foot{border-radius:var(--r-md)}
-  }
-  @media (max-width:360px){ .grid,.tiles{grid-template-columns:minmax(0,1fr)} }
-  .nav-inline{display:none}
-  @media (min-width:1200px){
-    header{position:sticky;top:0;z-index:55;background:var(--bg);padding:16px 0 14px;transition:box-shadow .3s ease}
-    header.scrolled{box-shadow:0 14px 24px -18px var(--lo)}
-    .head{display:grid;grid-template-columns:1fr auto 1fr;gap:18px}
-    .head-right{justify-self:end}
-    .nav-inline{display:block}
-    .navbar{display:none}
-    .label,#scene-sec,#overview{scroll-margin-top:120px}
-  }
-  @media (prefers-reduced-motion:reduce){
-    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
-  }
-</style>
+<link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
@@ -384,171 +28,323 @@
         <p>Smart Streetlight Control</p>
       </div>
     </div>
-    <nav class="nav-inline" aria-label="Page sections">
-      <div class="navpill">
-        <a href="#scene-sec" data-nav="scene-sec">Street</a>
-        <a href="#overview" data-nav="overview">Overview</a>
-        <a href="#lights" data-nav="lights">Lights</a>
-        <a href="#analytics" data-nav="analytics">Analytics</a>
-      </div>
+    <nav class="nav-inline" aria-label="Sections">
+      <div class="navpill" data-navpill></div>
     </nav>
     <div class="head-right">
-      <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch dark / light mode" title="Dark / light mode">
-        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <button class="btn" id="demoBtn" type="button" title="Demo guide" aria-label="Demo guide" aria-controls="demoPanel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg><span class="demo-txt">Demo guide</span>
+      </button>
+      <button class="round-btn theme-btn" id="themeBtn" type="button" aria-label="Switch to dark theme" title="Dark / light theme">
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
       <div class="neu-md hello">
-        <div><b>Hi, Control Room</b><small id="sActive">0 lights active</small></div>
-        <span class="live" title="Live"></span>
+        <div><b>Control Room</b><small id="hdrStatus">Simulation online</small></div>
+        <span class="sim-dot" id="simDot" aria-hidden="true"></span>
       </div>
     </div>
   </div>
 </header>
 
-<nav class="navbar" aria-label="Page sections">
-  <div class="navpill">
-    <a href="#scene-sec" data-nav="scene-sec">Street</a>
-    <a href="#overview" data-nav="overview">Overview</a>
-    <a href="#lights" data-nav="lights">Lights</a>
-    <a href="#analytics" data-nav="analytics">Analytics</a>
-  </div>
+<nav class="navbar" aria-label="Sections">
+  <div class="navpill" data-navpill></div>
 </nav>
 
 <main class="wrap">
 
-  <!-- ================= LIVE STREET SCENE ================= -->
-  <section id="scene-sec" class="neu scene-frame reveal" aria-label="Live city street with day and night sky">
-    <div class="scene" id="scene">
-      <div class="hud">
-        <div class="hud-pill time" title="Simulated time: 1 real second = 1 simulated minute">
-          <div class="clock-big" id="simClock">17:50</div>
-          <div>
-            <div class="phase" id="phase">Daytime</div>
-            <small>1 sec = 1 sim minute</small>
+  <!-- ================= STREET ================= -->
+  <section id="street" class="sec" aria-labelledby="streetTitle">
+    <div class="sec-head">
+      <div>
+        <h2 id="streetTitle">Street</h2>
+        <p>Select a pole to inspect and control it. Highlighting a zone does not change any light.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Highlight zone" data-zone-filter></div>
+    </div>
+
+    <div class="neu scene-frame">
+      <div class="scene" id="scene">
+        <div class="hud">
+          <div class="hud-pill time">
+            <div class="clock-big" id="simClock" aria-label="Simulated time">17:50</div>
+            <div>
+              <div class="phase" id="phase">Dusk</div>
+              <small id="simSub">Day 1 · simulated clock (1 s = 1 min)</small>
+            </div>
+          </div>
+          <div class="hud-right">
+            <button class="hud-btn" id="btnPause" type="button" aria-pressed="false">Pause</button>
+            <button class="hud-btn" id="btnPlus3" type="button" title="Fast-forward 3 simulated hours">+3 h</button>
+            <button class="hud-btn" id="btnNext" type="button">Skip to dusk</button>
           </div>
         </div>
-        <div class="hud-right">
-          <label class="hud-pill auto" title="Lights ON at 18:00, OFF at 06:00">
-            <span><b>Auto Mode</b><small>ON 18:00 · OFF 06:00</small></span>
-            <span class="sw"><input type="checkbox" id="autoToggle" checked aria-label="Auto Mode"><i></i></span>
-          </label>
-          <button class="hud-btn" id="btnPlus3" type="button">+3 h</button>
-          <button class="hud-btn" id="btnNext" type="button">To dusk</button>
+        <div class="scene-scroll" id="sceneScroll">
+          <svg id="sceneSvg" viewBox="0 0 1200 300" role="group" aria-label="Street with 12 simulated lamp posts. Each post is a button that opens its details."></svg>
         </div>
       </div>
-      <div class="scene-scroll">
-        <svg id="sceneSvg" viewBox="0 0 1200 300" role="img" aria-label="Street with 12 lamp posts. Click a lamp to switch it."></svg>
+      <div class="scene-legend" aria-hidden="true">
+        <span><i style="background:#ffd27a"></i>On / dimmed (glow = brightness)</span>
+        <span><i style="background:#59607a"></i>Off</span>
+        <span><i style="background:#ffcf3d"></i>⚠ Fault</span>
+        <span><i style="background:#93b4ff"></i>Manual override</span>
+        <span>Dashed outline = selected</span>
       </div>
+      <div id="polePanel" class="pole-panel" hidden tabindex="-1" aria-live="polite"></div>
     </div>
-  </section>
 
-  <!-- ================= TOP ================= -->
-  <section class="top" id="overview">
-    <div class="left-col">
-
-      <div class="neu gauge-card reveal">
+    <div class="ctl-grid">
+      <article class="card" aria-labelledby="schedTitle">
         <div class="card-head">
           <div class="t">
-            <span class="well" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></span>
-            <div><h3>Live Power</h3><p>100 W × brightness · 12 LEDs</p></div>
+            <span class="well" style="color:var(--blue-text)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+            <div><h3 id="schedTitle">Dusk-to-dawn schedule</h3><p>Switches lights that are under automatic control</p></div>
           </div>
-          <span class="chip" id="sPowerFoot">0% of 1,200 W</span>
+          <label class="switch" title="Automatic schedule on/off">
+            <input type="checkbox" id="schedToggle" checked aria-label="Automatic schedule">
+            <span class="txt" id="schedToggleTxt">On</span><span class="knob"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"/><path d="M17.7 6.8a8 8 0 1 1-11.4 0"/></svg></span>
+          </label>
         </div>
-        <div class="gauge">
-          <svg id="gaugeSvg" viewBox="0 0 320 214" aria-hidden="true"></svg>
-          <div class="g-center">
-            <b><span id="sPower">0</span><small>W</small></b>
-            <span class="cap">Power draw</span>
+        <div class="sched-times">
+          <label class="field">Lights on at<input type="time" id="schedOn" value="18:00" required></label>
+          <label class="field">Lights off at<input type="time" id="schedOff" value="06:00" required></label>
+        </div>
+        <p class="err" id="schedErr" role="alert"></p>
+        <p class="next-line" id="schedNext"></p>
+        <div class="override-row">
+          <span id="overrideInfo">No manual overrides</span>
+          <button class="btn btn-sm" id="btnResume" type="button">Resume automation</button>
+        </div>
+      </article>
+
+      <article class="card" aria-labelledby="policyTitle">
+        <div class="card-head">
+          <div class="t">
+            <span class="well" style="color:var(--green-text)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"/><path d="M2 21c0-3 1.9-5.4 5.1-6"/></svg></span>
+            <div><h3 id="policyTitle">Brightness policy</h3><p>How bright automatic lights are while switched on</p></div>
           </div>
         </div>
-      </div>
-
-      <div class="tiles">
-        <button class="tile on-tile reveal" id="btnAllOn" type="button" style="animation-delay:.05s">
-          <span class="row"><span class="well"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="dots"><i></i><i></i></span></span>
-          <span><h4>All On</h4><p>12 lights · 100%</p></span>
-        </button>
-        <button class="tile reveal" id="btnAllOff" type="button" style="animation-delay:.1s">
-          <span class="row"><span class="well"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span><span class="dots"><i></i><i></i></span></span>
-          <span><h4>All Off</h4><p>Switch grid off</p></span>
-        </button>
-        <button class="tile eco-tile reveal" id="btnEco" type="button" style="animation-delay:.15s">
-          <span class="row"><span class="well"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"/><path d="M2 21c0-3 1.9-5.4 5.1-6"/></svg></span><span class="dots"><i></i><i></i></span></span>
-          <span><h4>Eco Mode</h4><p>Dim all to 50%</p></span>
-        </button>
-      </div>
-
-      <div class="neu-md saved reveal">
-        <div class="top-row">
-          <span class="well" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"/><path d="M2 21c0-3 1.9-5.4 5.1-6"/></svg></span>
-          <div class="info"><b>Energy saved vs always-on</b><small id="sSavedFoot">0% less than all 12 lights at 100%</small></div>
-          <div class="val"><strong><span id="sSaved">0.000</span><small>kWh</small></strong><em id="sSavedCost">₹0.00 saved</em></div>
+        <div class="seg" role="radiogroup" aria-label="Brightness policy" id="policySeg" style="margin-top:16px">
+          <button type="button" role="radio" data-policy="full">Full 100%</button>
+          <button type="button" role="radio" data-policy="eco">Eco</button>
+          <button type="button" role="radio" data-policy="adaptive">Adaptive</button>
         </div>
-        <div class="meter"><span id="sSavedBar"></span></div>
-      </div>
-    </div>
-
-    <div class="neu list-card reveal" style="animation-delay:.08s">
-      <div class="card-head">
-        <div class="t">
-          <span class="well"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></span>
-          <div><h3>Grid Summary</h3><p>Today's status &amp; usage</p></div>
+        <p class="policy-explain" id="policyExplain"></p>
+        <div class="eco-box" id="ecoBox" hidden>
+          <label class="field-inline">Eco brightness <input type="number" id="ecoLevel" min="10" max="90" step="5" value="50" aria-describedby="ecoErr">%</label>
+          <p class="err" id="ecoErr" role="alert"></p>
         </div>
-      </div>
-      <div class="rows">
-        <div class="rowi">
-          <span class="well"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span>
-          <div class="info"><b>Total Lights</b><small>3 zones · 4 poles each</small></div>
-          <span class="val" id="sTotal">12</span>
+        <div class="adaptive-box" id="adaptiveBox" hidden>
+          <div id="activityRows"></div>
+          <div class="levels" role="group" aria-label="Adaptive brightness targets">
+            <span class="muted" style="font-size:.76rem">Targets:</span>
+            <label class="field-inline">Low <input type="number" data-level="low" min="10" max="100" step="5">%</label>
+            <label class="field-inline">Moderate <input type="number" data-level="moderate" min="10" max="100" step="5">%</label>
+            <label class="field-inline">High <input type="number" data-level="high" min="10" max="100" step="5">%</label>
+          </div>
+          <p class="err" id="levelErr" role="alert"></p>
+          <p class="note" style="margin:0">Activity is a <b>simulated input</b> you set by hand. No traffic sensors are connected. Targets are demo values, not safety standards.</p>
         </div>
-        <div class="rowi">
-          <span class="well" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg></span>
-          <div class="info"><b>Lights On</b><small id="sOnFoot">of 12 lights</small></div>
-          <span class="val" id="sOn">0</span>
-        </div>
-        <div class="rowi" id="faultCard">
-          <span class="well"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
-          <div class="info"><b>Faults</b><small id="sFaultFoot">All systems normal</small></div>
-          <button class="btn" id="btnCheck" type="button" style="padding:7px 13px;font-size:.72rem" title="Scan all lights for faults">Check now</button>
-          <span class="val" id="sFault">0</span>
-        </div>
-        <div class="rowi">
-          <span class="well" style="color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11h6"/></svg></span>
-          <div class="info"><b>Energy Today</b><small>Adds up every sim minute</small></div>
-          <span class="val"><span id="sEnergy">0.000</span><small>kWh</small></span>
-        </div>
-        <div class="rowi amber">
-          <span class="well" style="font-weight:600;color:var(--amber-text)">₹</span>
-          <div class="info"><b>Cost Today</b><small>at ₹8 per kWh</small></div>
-          <span class="val" id="sCost">₹0.00</span>
-        </div>
-      </div>
+      </article>
     </div>
   </section>
 
-  <div class="label" id="lights">Streetlights</div>
-  <div id="zones"></div>
-
-  <div class="label" id="analytics">Energy Analytics</div>
-  <section class="charts">
-    <div class="neu chart-card reveal">
-      <div class="card-head">
-        <div class="t">
-          <span class="well" style="color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-          <div><h3>Power Usage</h3><p>Last 40 simulated minutes</p></div>
-        </div>
-        <span class="now" id="chartNow">0 W</span>
-      </div>
-      <div class="chart-box"><canvas id="powerChart" aria-label="Line chart of power usage over time"></canvas></div>
+  <!-- ================= OVERVIEW ================= -->
+  <section id="overview" class="sec" aria-labelledby="ovTitle">
+    <div class="sec-head">
+      <div><h2 id="ovTitle">Overview</h2><p>Every number below is calculated live from the 12 simulated lights.</p></div>
     </div>
-    <div class="neu chart-card reveal" style="animation-delay:.1s">
-      <div class="card-head">
-        <div class="t">
-          <span class="well"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></span>
-          <div><h3>Energy per Zone</h3><p>kWh used today</p></div>
+
+    <div class="fault-banner" id="faultBanner" hidden role="status">
+      <div class="msg"><span class="well" aria-hidden="true">⚠</span><span id="faultBannerText"></span></div>
+      <a class="btn btn-sm btn-danger" href="#activity">View alerts</a>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="k-top"><span>Total lights</span><span class="well" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span></div>
+        <div class="v" id="kTotal">12</div>
+        <div class="s" id="kTotalSub">3 zones · 4 poles each</div>
+      </div>
+      <div class="kpi">
+        <div class="k-top"><span>Lights on / off</span><span class="well" style="color:var(--amber-text)" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg></span></div>
+        <div class="v"><span id="kOn">0</span><small>on</small> <span id="kOff">12</span><small>off</small></div>
+        <div class="s" id="kOnSub">0 dimmed</div>
+      </div>
+      <div class="kpi" id="kFaultCard">
+        <div class="k-top"><span>Active faults</span><span class="well" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span></div>
+        <div class="v" id="kFaults">0</div>
+        <div class="s" id="kFaultSub">All lights healthy</div>
+      </div>
+      <div class="kpi">
+        <div class="k-top"><span>Power draw now</span><span class="well" style="color:var(--amber-text)" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></span></div>
+        <div class="v"><span id="kPower">0</span><small>W</small></div>
+        <div class="s" id="kPowerSub">0% of 1,200 W rated</div>
+      </div>
+    </div>
+
+    <div class="top">
+      <div class="left-col">
+        <div class="neu gauge-card">
+          <div class="card-head">
+            <div class="t">
+              <span class="well" style="color:var(--amber-text)" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></span>
+              <div><h3>Live power</h3><p>Σ rated W × brightness ÷ 100 for every lit pole</p></div>
+            </div>
+            <span class="chip" id="gaugeChip">avg 0% brightness</span>
+          </div>
+          <div class="gauge">
+            <svg id="gaugeSvg" viewBox="0 0 320 214" aria-hidden="true"></svg>
+            <div class="g-center">
+              <b><span id="gPower">0</span><small>W</small></b>
+              <span class="cap">of 1,200 W rated</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tiles" role="group" aria-label="Quick actions for all lights">
+          <button class="tile on-tile" id="btnAllOn" type="button">
+            <span class="well" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>
+            <span><h4>All on</h4><p>Manual override</p></span>
+          </button>
+          <button class="tile" id="btnAllOff" type="button">
+            <span class="well" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span>
+            <span><h4>All off</h4><p>Asks to confirm</p></span>
+          </button>
+          <button class="tile eco-tile" id="btnEco" type="button" aria-pressed="false">
+            <span class="well" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"/><path d="M2 21c0-3 1.9-5.4 5.1-6"/></svg></span>
+            <span><h4>Eco Mode</h4><p id="ecoTileSub">Auto lights at 50%</p></span>
+          </button>
         </div>
       </div>
-      <div class="chart-box"><canvas id="zoneChart" aria-label="Bar chart of energy per zone"></canvas></div>
+
+      <div class="neu energy-card" aria-labelledby="todayTitle">
+        <div class="card-head">
+          <div class="t">
+            <span class="well" style="color:var(--blue-text)" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 11h6"/></svg></span>
+            <div><h3 id="todayTitle">Today's energy</h3><p id="todaySub">Day 1 · simulated</p></div>
+          </div>
+        </div>
+        <div class="e-rows">
+          <div class="e-row"><span>Energy used<small>power × time, per sim minute</small></span><b><span id="tEnergy">0.000</span><small>kWh</small></b></div>
+          <div class="e-row"><span>Estimated cost<small id="tTariff">at ₹8.00 per kWh</small></span><b id="tCost">₹0.00</b></div>
+          <div class="e-row"><span>Baseline<small>all 12 at 100% during schedule</small></span><b><span id="tBase">0.000</span><small>kWh</small></b></div>
+          <div class="e-row saved" id="tSavedRow"><span>Saved vs baseline<small id="tSavedSub">no scheduled hours yet</small></span><b><span id="tSaved">0.000</span><small>kWh</small></b></div>
+        </div>
+        <div class="meter" role="img" id="tMeterWrap" aria-label="Savings 0 percent"><span id="tMeter"></span></div>
+      </div>
+    </div>
+
+    <h3 class="sub-label">Zones</h3>
+    <div class="zone-sums" id="zoneSums" role="group" aria-label="Zone summaries. Select one to filter the street and lights."></div>
+  </section>
+
+  <!-- ================= LIGHTS ================= -->
+  <section id="lights" class="sec" aria-labelledby="lightsTitle">
+    <div class="sec-head">
+      <div><h2 id="lightsTitle">Streetlights</h2><p id="filterInfo">Showing 12 of 12 lights</p></div>
+      <div class="sec-tools">
+        <div class="seg sm" role="group" aria-label="Filter by zone" data-zone-filter></div>
+        <div class="seg sm" role="group" aria-label="Filter by status" id="statusFilter">
+          <button type="button" data-status="all" aria-pressed="true">All</button>
+          <button type="button" data-status="on" aria-pressed="false">On</button>
+          <button type="button" data-status="dimmed" aria-pressed="false">Dimmed</button>
+          <button type="button" data-status="off" aria-pressed="false">Off</button>
+          <button type="button" data-status="fault" aria-pressed="false">Fault</button>
+        </div>
+      </div>
+    </div>
+    <div id="zones"></div>
+    <p class="empty" id="lightsEmpty" hidden>No lights match these filters.</p>
+  </section>
+
+  <!-- ================= ANALYTICS ================= -->
+  <section id="analytics" class="sec" aria-labelledby="anTitle">
+    <div class="sec-head">
+      <div><h2 id="anTitle">Energy analytics</h2><p id="periodDesc">Live</p></div>
+      <div class="sec-tools">
+        <div class="seg sm" role="group" aria-label="Time range" id="periodSeg">
+          <button type="button" data-period="live" aria-pressed="true">Live</button>
+          <button type="button" data-period="today" aria-pressed="false">Today</button>
+          <button type="button" data-period="week" aria-pressed="false">7 days</button>
+          <button type="button" data-period="month" aria-pressed="false">30 days</button>
+        </div>
+        <label class="field-inline">Tariff ₹<input type="number" id="tariff" min="0.5" max="100" step="0.5" value="8" aria-describedby="tariffErr">/kWh</label>
+      </div>
+    </div>
+    <p class="err" id="tariffErr" role="alert"></p>
+
+    <div class="metrics">
+      <div class="metric"><small>Power now</small><b><span id="aPower">0</span><small>W</small></b><em>instantaneous</em></div>
+      <div class="metric"><small>Energy</small><b><span id="aEnergy">0</span><small>kWh</small></b><em id="aEnergySub">in this range</em></div>
+      <div class="metric"><small>Estimated cost</small><b id="aCost">₹0</b><em id="aCostSub">kWh × tariff</em></div>
+      <div class="metric"><small>Baseline</small><b><span id="aBase">0</span><small>kWh</small></b><em id="aBaseSub">₹0 at tariff</em></div>
+      <div class="metric" id="aSavedCard"><small>Saved vs baseline</small><b><span id="aSaved">0</span><small>kWh</small></b><em id="aSavedSub">–</em></div>
+    </div>
+
+    <div class="charts">
+      <div class="neu chart-card">
+        <div class="card-head">
+          <div class="t">
+            <span class="well" style="color:var(--amber-text)" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+            <div><h3 id="c1Title">Power over time</h3><p id="c1Sub">Actual vs baseline</p></div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="timeChart" role="img" aria-describedby="c1Summary"></canvas></div>
+        <div class="legend" aria-hidden="true">
+          <span><i style="background:#f2a516"></i>Actual (simulated)</span>
+          <span><i class="dash" id="baseSwatch"></i><span id="baseLegend">Baseline (dashed)</span></span>
+          <span id="genLegend" hidden><i class="gen"></i>Generated demo history</span>
+        </div>
+        <p class="sr-only" id="c1Summary"></p>
+      </div>
+      <div class="neu chart-card">
+        <div class="card-head">
+          <div class="t">
+            <span class="well" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></span>
+            <div><h3>Energy by zone</h3><p id="c2Sub">kWh in the selected range</p></div>
+          </div>
+        </div>
+        <div class="chart-box"><canvas id="zoneChart" role="img" aria-describedby="c2Summary"></canvas></div>
+        <p class="sr-only" id="c2Summary"></p>
+      </div>
+    </div>
+    <p class="note" id="dataNote"></p>
+    <p class="note"><b>How the numbers work.</b> Power (W) = rated 100 W × brightness ÷ 100 for every lit pole, sampled once per simulated minute. Energy (kWh) = W × hours ÷ 1000. Cost = kWh × tariff. <b>Baseline</b> = a conventional dusk-to-dawn system: all 12 lights at 100% during the configured on-window, no dimming. Savings = baseline − actual for the same period and can be negative if lights run outside the schedule.</p>
+  </section>
+
+  <!-- ================= ACTIVITY ================= -->
+  <section id="activity" class="sec" aria-labelledby="actTitle">
+    <div class="sec-head">
+      <div><h2 id="actTitle">Alerts &amp; activity</h2><p>Rule-based simulated faults and a record of every meaningful change.</p></div>
+      <button class="btn" id="btnDemoFault" type="button">⚠ Inject demo fault</button>
+    </div>
+    <div class="act-grid">
+      <article class="card" aria-labelledby="alertsTitle">
+        <div class="card-head">
+          <div class="t">
+            <span class="well" style="color:var(--red-text)" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+            <div><h3 id="alertsTitle">Fault alerts</h3><p id="alertCounts">No alerts</p></div>
+          </div>
+        </div>
+        <ul class="list" id="alertList"></ul>
+      </article>
+      <article class="card" aria-labelledby="logTitle">
+        <div class="card-head">
+          <div class="t">
+            <span class="well" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+            <div><h3 id="logTitle">Activity log</h3><p>Times are simulated. Kept in this tab only; resets on reload or demo reset.</p></div>
+          </div>
+        </div>
+        <div class="seg sm" role="group" aria-label="Filter activity log" id="logFilter" style="margin-top:14px">
+          <button type="button" data-log="all" aria-pressed="true">All</button>
+          <button type="button" data-log="control" aria-pressed="false">Lighting</button>
+          <button type="button" data-log="automation" aria-pressed="false">Automation</button>
+          <button type="button" data-log="energy" aria-pressed="false">Energy</button>
+          <button type="button" data-log="fault" aria-pressed="false">Faults</button>
+        </div>
+        <ol class="list" id="logList" aria-live="off"></ol>
+      </article>
     </div>
   </section>
 </main>
@@ -556,754 +352,42 @@
 <footer>
   <div class="wrap">
     <div class="neu-md foot">
-      <span>LumenGrid – Smart Streetlight Control</span>
+      <span>LumenGrid – Smart Streetlight Control · frontend simulation, no hardware connected</span>
       <span>Built by <b>Vedant</b></span>
     </div>
   </div>
 </footer>
 
-<div id="toasts" aria-live="polite"></div>
-<script>
-(function(){
-  'use strict';
+<aside class="demo-panel" id="demoPanel" hidden aria-labelledby="demoTitle">
+  <div class="card-head">
+    <div><h3 id="demoTitle">Demo guide</h3></div>
+    <button class="btn btn-sm" type="button" id="demoClose" aria-label="Close demo guide">Close</button>
+  </div>
+  <p>Run each step in order. Every step is deterministic, so the demo gives the same result every time.</p>
+  <ol class="demo-steps" id="demoSteps"></ol>
+  <div class="demo-foot">
+    <button class="btn btn-sm btn-danger" type="button" id="btnReset">Reset demo</button>
+    <span class="muted" style="font-size:.72rem;align-self:center">Theme is kept on reset</span>
+  </div>
+</aside>
 
-  /* ================= CONFIG ================= */
-  var WATTS_PER_LED = 100;       // W at 100% brightness
-  var COST_PER_KWH = 8;          // ₹
-  var HISTORY_POINTS = 40;
-  var DIM_THRESHOLD = 80;        // below this % a lit light counts as "Dimmed"
-  var DUSK = 18 * 60, DAWN = 6 * 60;
+<dialog class="confirm" id="confirmDlg" aria-labelledby="cfTitle" aria-describedby="cfMsg">
+  <form method="dialog">
+    <h3 id="cfTitle">Are you sure?</h3>
+    <p id="cfMsg"></p>
+    <div class="dlg-btns">
+      <button class="btn" value="cancel" type="submit">Cancel</button>
+      <button class="btn btn-primary" value="ok" type="submit" id="cfOk">Confirm</button>
+    </div>
+  </form>
+</dialog>
 
-  var ZONES = [
-    { id:'main',   name:'Main Road',     code:'MR', color:'#f2a516' },
-    { id:'market', name:'Market Street', code:'MS', color:'#e8794a' },
-    { id:'campus', name:'Campus Lane',   code:'CL', color:'#5b8def' }
-  ];
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
 
-  /* ================= STATE ================= */
-  var lights = [];
-  ZONES.forEach(function(z){
-    for (var i = 1; i <= 4; i++){
-      lights.push({ id: z.code + '-0' + i, zone: z.id, pole: i, on: true, brightness: i === 3 ? 60 : 100, fault: false });
-    }
-  });
-
-  var simMinutes = 17 * 60 + 50;     // start 10 sim-seconds before dusk so Auto Mode fires right away
-  var energyKWh = 0, savedKWh = 0, baselineKWh = 0;
-  var zoneEnergy = { main:0, market:0, campus:0 };
-  var powerHistory = [], labelHistory = [];
-  var autoMode = true;
-  var ff = 0;                        // fast-forward minutes remaining
-  var lastCheck = simMinutes;        // last health-check time (sim minutes)
-  var FAULT_CHANCE = 1 / 55;         // per simulated minute (~1 fault a minute of real time)
-  var MAX_FAULTS = 3;
-
-  /* ================= THEME (dark / light) ================= */
-  function isDark(){ return document.documentElement.getAttribute('data-theme') === 'dark'; }
-  function themeColors(){ return isDark() ? { grid:'rgba(255,255,255,0.07)', tick:'#8e94a4' } : { grid:'rgba(53,58,70,0.07)', tick:'#8c92a1' }; }
-  var chartTheme = themeColors();
-
-  /* ================= HELPERS ================= */
-  function $(id){ return document.getElementById(id); }
-  function pad(n){ return (n < 10 ? '0' : '') + n; }
-  function fmtTime(mins){ var m = ((mins % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
-  function zoneOf(id){ for (var i=0;i<ZONES.length;i++){ if (ZONES[i].id === id) return ZONES[i]; } return null; }
-  function isLit(l){ return l.on && !l.fault && l.brightness > 0; }
-  function lightPower(l){ return isLit(l) ? WATTS_PER_LED * l.brightness / 100 : 0; }
-  function statusOf(l){
-    if (l.fault) return 'fault';
-    if (!l.on || l.brightness === 0) return 'off';
-    if (l.brightness < DIM_THRESHOLD) return 'dimmed';
-    return 'on';
-  }
-  var STATUS_TEXT = { on:'On', off:'Off', dimmed:'Dimmed', fault:'Fault' };
-  function totalPower(){ return lights.reduce(function(s,l){ return s + lightPower(l); }, 0); }
-  function zonePower(zid){ return lights.reduce(function(s,l){ return s + (l.zone === zid ? lightPower(l) : 0); }, 0); }
-  function findLight(id){ for (var i=0;i<lights.length;i++){ if (lights[i].id === id) return lights[i]; } return null; }
-  function setText(el, v){ if (el._t !== v){ el._t = v; el.textContent = v; } }
-
-  /* ================= SMOOTH NUMBERS (count-up tween) ================= */
-  var tweens = new Map(), tweenRaf = 0;
-  function setNum(el, to, fmt, dur){
-    if (el._cur === undefined){ el._cur = to; el._to = to; el.textContent = fmt(to); return; }
-    if (el._to === to) return;
-    el._to = to;
-    tweens.set(el, { from: el._cur, to: to, t0: performance.now(), dur: dur || 600, fmt: fmt });
-    if (!tweenRaf) tweenRaf = requestAnimationFrame(tweenStep);
-  }
-  function tweenStep(now){
-    tweenRaf = 0;
-    tweens.forEach(function(tw, el){
-      var p = Math.min(1, (now - tw.t0) / tw.dur), e = 1 - Math.pow(1 - p, 3);
-      el._cur = tw.from + (tw.to - tw.from) * e;
-      el.textContent = tw.fmt(el._cur);
-      if (p >= 1) tweens.delete(el);
-    });
-    if (tweens.size) tweenRaf = requestAnimationFrame(tweenStep);
-  }
-  function fInt(v){ return Math.round(v).toLocaleString('en-IN'); }
-  function f3(v){ return v.toFixed(3); }
-  function fRs(v){ return '₹' + v.toFixed(2); }
-
-  /* ================= TOAST ================= */
-  function toast(msg, icon){
-    var box = $('toasts');
-    var t = document.createElement('div');
-    t.className = 'toast';
-    t.innerHTML = '<span class="well">' + (icon || '⚡') + '</span><span></span>';
-    t.lastChild.textContent = msg;
-    box.appendChild(t);
-    while (box.children.length > 3) box.removeChild(box.firstChild);
-    setTimeout(function(){
-      t.classList.add('out');
-      setTimeout(function(){ if (t.parentNode) t.parentNode.removeChild(t); }, 320);
-    }, 2600);
-  }
-
-  /* ================= GAUGE (tick dial, rAF-smoothed) ================= */
-  var GAUGE_TICKS = 56, G_START = 200, G_SWEEP = 220, GCX = 160, GCY = 150;
-  var gaugeTicks = [], gFrac = 0, gTarget = 0, gFrom = 0, gT0 = 0, gRaf = 0, gLastActive = -2;
-  function polar(r, deg){ var a = deg * Math.PI / 180; return [GCX + r * Math.cos(a), GCY - r * Math.sin(a)]; }
-  function buildGauge(){
-    var html = '', i;
-    for (i = 0; i < GAUGE_TICKS; i++){
-      var deg = G_START - (i / (GAUGE_TICKS - 1)) * G_SWEEP;
-      var p1 = polar(112, deg), p2 = polar(140, deg);
-      html += '<line class="tick" x1="' + p1[0].toFixed(1) + '" y1="' + p1[1].toFixed(1) + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '"/>';
-    }
-    for (i = 0; i <= 40; i++){
-      var d = G_START - (i / 40) * G_SWEEP, q = polar(96, d);
-      html += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + (i % 10 === 0 ? 1.8 : 1) + '" style="fill:var(--muted)"/>';
-    }
-    var l0 = polar(80, G_START), l1 = polar(80, G_START - G_SWEEP / 2), l2 = polar(80, G_START - G_SWEEP);
-    var tx = function(p, dy, s){ return '<text x="' + p[0].toFixed(1) + '" y="' + (p[1] + dy).toFixed(1) + '" font-size="10" style="fill:var(--muted)" text-anchor="middle" font-family="Poppins, sans-serif">' + s + '</text>'; };
-    html += tx(l0, 4, '0') + tx(l1, 10, '600 W') + tx(l2, 4, '1200');
-    var n1 = polar(108, G_START), n2 = polar(150, G_START);
-    html += '<g id="gNeedle"><line x1="' + n1[0].toFixed(1) + '" y1="' + n1[1].toFixed(1) + '" x2="' + n2[0].toFixed(1) + '" y2="' + n2[1].toFixed(1) + '" style="stroke:var(--text)" stroke-width="3" stroke-linecap="round"/><circle cx="' + n2[0].toFixed(1) + '" cy="' + n2[1].toFixed(1) + '" r="6" style="fill:var(--bg);stroke:var(--text)" stroke-width="3"/></g>';
-    $('gaugeSvg').innerHTML = html;
-    gaugeTicks = $('gaugeSvg').querySelectorAll('.tick');
-  }
-  function drawGauge(frac){
-    var active = frac > 0.001 ? Math.round(frac * (GAUGE_TICKS - 1)) : -1;
-    if (active !== gLastActive){
-      gLastActive = active;
-      for (var i = 0; i < gaugeTicks.length; i++){
-        var on = i <= active;
-        gaugeTicks[i].classList.toggle('on', on);
-        gaugeTicks[i].classList.toggle('hot', on && i > GAUGE_TICKS * 0.75);
-      }
-    }
-    $('gNeedle').style.transform = 'rotate(' + (frac * G_SWEEP).toFixed(2) + 'deg)';
-  }
-  function setGauge(frac){
-    frac = Math.max(0, Math.min(1, frac));
-    if (frac === gTarget) return;
-    gTarget = frac; gFrom = gFrac; gT0 = performance.now();
-    if (!gRaf) gRaf = requestAnimationFrame(gaugeStep);
-  }
-  function gaugeStep(now){
-    var p = Math.min(1, (now - gT0) / 700), e = 1 - Math.pow(1 - p, 3);
-    gFrac = gFrom + (gTarget - gFrom) * e;
-    drawGauge(gFrac);
-    gRaf = p < 1 ? requestAnimationFrame(gaugeStep) : 0;
-  }
-
-  /* ================= LIVE STREET SCENE ================= */
-  var scene = $('scene'), sceneSvg = $('sceneSvg');
-  var lampEls = {}, sunEl, moonEl, sunCore;
-
-  function rng(seed){
-    return function(){
-      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
-  }
-  function mix(a, b, t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
-  function rgb(c){ return 'rgb(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ')'; }
-  function hex(h){ return [parseInt(h.substr(1,2),16), parseInt(h.substr(3,2),16), parseInt(h.substr(5,2),16)]; }
-
-  // [hour, top colour, bottom colour]
-  var SKY = [
-    [0,'#0b1026','#1b2447'], [5,'#141a3a','#3b3f73'], [6,'#3c4a8a','#f4a26b'], [7.5,'#6fb1ea','#cfe8f7'],
-    [12,'#4a9be8','#bfe3fa'], [16.5,'#5aa4e6','#e9e1c8'], [18,'#5b4a8c','#f08a4b'], [19,'#2a2a5c','#8a4a6a'],
-    [20,'#12163a','#2a2f5e'], [24,'#0b1026','#1b2447']
-  ].map(function(k){ return [k[0], hex(k[1]), hex(k[2])]; });
-
-  function skyAt(h){
-    for (var i = 0; i < SKY.length - 1; i++){
-      if (h >= SKY[i][0] && h <= SKY[i+1][0]){
-        var t = (h - SKY[i][0]) / (SKY[i+1][0] - SKY[i][0]);
-        return [mix(SKY[i][1], SKY[i+1][1], t), mix(SKY[i][2], SKY[i+1][2], t)];
-      }
-    }
-    return [SKY[0][1], SKY[0][2]];
-  }
-  function nightFactor(h){
-    if (h >= 20 || h < 5) return 1;
-    if (h < 6.5) return 1 - (h - 5) / 1.5;
-    if (h < 17.5) return 0;
-    return (h - 17.5) / 2.5;
-  }
-
-  function lampMarkup(l, n){
-    var x = 50 + 100 * n;
-    return '<g class="lamp" data-id="' + l.id + '" transform="translate(' + x + ',0)" tabindex="0" role="button" aria-label="' + l.id + ' – click to switch">' +
-      '<title>' + l.id + ' · click to switch</title>' +
-      '<rect class="hit" x="-34" y="96" width="100" height="176"/>' +
-      '<polygon class="cone" points="17,123 31,123 100,251 -52,251"/>' +
-      '<ellipse class="pool" cx="24" cy="252" rx="74" ry="9"/>' +
-      '<path class="pole" d="M0 250 V132 Q0 114 20 114 H24"/>' +
-      '<rect class="base" x="-7" y="245" width="14" height="6" rx="2"/>' +
-      '<circle class="halo" cx="24" cy="123" r="40"/>' +
-      '<rect class="head" x="11" y="114" width="28" height="9" rx="4.5"/>' +
-      '<text class="lamp-id" x="0" y="269">' + l.id + '</text>' +
-      '</g>';
-  }
-
-  function buildScene(){
-    var r = rng(11), h = '', i, x, w, hh;
-    h += '<defs>' +
-      '<linearGradient id="coneGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe19a" stop-opacity=".8"/><stop offset="1" stop-color="#ffe19a" stop-opacity="0"/></linearGradient>' +
-      '<radialGradient id="haloGrad"><stop offset="0" stop-color="#fff3c9" stop-opacity=".95"/><stop offset=".35" stop-color="#ffd27a" stop-opacity=".45"/><stop offset="1" stop-color="#ffb627" stop-opacity="0"/></radialGradient>' +
-      '<radialGradient id="poolGrad"><stop offset="0" stop-color="#ffe19a" stop-opacity=".65"/><stop offset="1" stop-color="#ffe19a" stop-opacity="0"/></radialGradient>' +
-      '<radialGradient id="sunHalo"><stop offset="0" stop-color="#fff0b0" stop-opacity=".85"/><stop offset=".45" stop-color="#ffd27a" stop-opacity=".25"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>' +
-      '<radialGradient id="moonHalo"><stop offset="0" stop-color="#cfd8ff" stop-opacity=".5"/><stop offset="1" stop-color="#cfd8ff" stop-opacity="0"/></radialGradient>' +
-      '</defs>';
-
-    h += '<g class="stars">';
-    for (i = 0; i < 46; i++){
-      h += '<circle class="star" cx="' + (r()*1200).toFixed(0) + '" cy="' + (r()*170).toFixed(0) + '" r="' + (0.6 + r()*1.1).toFixed(1) + '" style="animation-delay:-' + (r()*4).toFixed(1) + 's"/>';
-    }
-    h += '</g>';
-
-    h += '<g id="sun"><circle r="62" fill="url(#sunHalo)"/><circle id="sunCore" r="24" fill="#ffd76a"/></g>';
-    h += '<g id="moon"><circle r="48" fill="url(#moonHalo)"/><circle r="19" fill="#f2efe0"/><circle cx="-6" cy="-4" r="4" fill="#d9d5c1"/><circle cx="7" cy="6" r="3" fill="#d9d5c1"/><circle cx="4" cy="-9" r="2" fill="#d9d5c1"/></g>';
-
-    h += '<g class="clouds">';
-    [[70,-30,95],[38,0,125],[100,-60,150]].forEach(function(c){
-      h += '<g class="cloud" style="animation-duration:' + c[2] + 's;animation-delay:' + c[1] + 's"><g transform="translate(0,' + c[0] + ')">' +
-        '<ellipse cx="0" cy="0" rx="46" ry="14"/><ellipse cx="-26" cy="4" rx="26" ry="11"/><ellipse cx="28" cy="5" rx="30" ry="11"/><ellipse cx="6" cy="-10" rx="26" ry="12"/></g></g>';
-    });
-    h += '</g>';
-
-    h += '<g class="far">';
-    x = -10;
-    while (x < 1210){ w = 44 + r()*50; hh = 80 + r()*70; h += '<rect x="' + x.toFixed(0) + '" y="' + (238-hh).toFixed(0) + '" width="' + w.toFixed(0) + '" height="' + hh.toFixed(0) + '"/>'; x += w + 2 + r()*6; }
-    h += '</g>';
-
-    var near = '', wins = '';
-    x = -20;
-    while (x < 1210){
-      w = 50 + r()*55; hh = 50 + r()*60;
-      near += '<rect x="' + x.toFixed(0) + '" y="' + (238-hh).toFixed(0) + '" width="' + w.toFixed(0) + '" height="' + hh.toFixed(0) + '"/>';
-      for (var cy = 238 - hh + 10; cy < 224; cy += 16){
-        for (var cx = x + 7; cx < x + w - 10; cx += 12){
-          if (r() < 0.55) wins += '<rect x="' + cx.toFixed(0) + '" y="' + cy.toFixed(0) + '" width="6" height="8" fill-opacity="' + (0.5 + r()*0.5).toFixed(2) + '"/>';
-        }
-      }
-      x += w + 4 + r()*10;
-    }
-    h += '<g class="near">' + near + '</g><g class="windows">' + wins + '</g>';
-
-    h += '<rect class="walk" x="0" y="238" width="1200" height="14"/><rect class="road" x="0" y="252" width="1200" height="48"/>';
-    h += '<line class="lane" x1="0" y1="282" x2="1200" y2="282"/>';
-    h += '<line class="divider" x1="400" y1="252" x2="400" y2="300"/><line class="divider" x1="800" y1="252" x2="800" y2="300"/>';
-    ZONES.forEach(function(z, zi){ h += '<text class="zone-label" x="' + (200 + zi*400) + '" y="296" text-anchor="middle">' + z.name.toUpperCase() + '</text>'; });
-
-    lights.forEach(function(l, n){ h += lampMarkup(l, n); });
-    sceneSvg.innerHTML = h;
-
-    sunEl = $('sun'); moonEl = $('moon'); sunCore = $('sunCore');
-    sceneSvg.querySelectorAll('.lamp').forEach(function(g){ lampEls[g.getAttribute('data-id')] = g; });
-  }
-
-  function phaseOf(h){
-    if (h >= 5 && h < 7) return '🌅 Dawn';
-    if (h >= 7 && h < 17) return '☀️ Daytime';
-    if (h >= 17 && h < 19) return '🌇 Dusk';
-    return '🌙 Night';
-  }
-  function isNightMinute(m){ return m >= DUSK || m < DAWN; }
-
-  function updateScene(){
-    var m = ((simMinutes % 1440) + 1440) % 1440, h = m / 60;
-    var n = nightFactor(h), sk = skyAt(h), s = scene.style;
-    s.setProperty('--sky1', rgb(sk[0]));
-    s.setProperty('--sky2', rgb(sk[1]));
-    s.setProperty('--night', n.toFixed(3));
-    var far = mix(sk[1], mix([92,110,158], [20,26,50], n), 0.5), nearC = mix(sk[1], mix([58,70,108], [12,15,32], n), 0.74);
-    var road = mix(sk[1], mix([54,60,76], [22,25,36], n), 0.88);
-    s.setProperty('--far', rgb(far));
-    s.setProperty('--near', rgb(nearC));
-    s.setProperty('--road', rgb(road));
-    s.setProperty('--walk', rgb(mix(road, [120,126,150], 0.25)));
-    s.setProperty('--pole', rgb(mix([35,40,58], [120,128,160], n)));
-
-    var ts = (m - 360) / 720, tm = ((m - 1080 + 1440) % 1440) / 720;
-    if (ts >= 0 && ts <= 1){
-      sunEl.style.visibility = 'visible';
-      sunEl.setAttribute('transform', 'translate(' + (110 + ts*980).toFixed(1) + ',' + (236 - Math.sin(Math.PI*ts)*170).toFixed(1) + ')');
-      sunCore.setAttribute('fill', rgb(mix([255,215,106], [255,128,60], Math.pow(Math.abs(2*ts-1), 3))));
-    } else sunEl.style.visibility = 'hidden';
-    if (tm >= 0 && tm <= 1){
-      moonEl.style.visibility = 'visible';
-      moonEl.setAttribute('transform', 'translate(' + (110 + tm*980).toFixed(1) + ',' + (236 - Math.sin(Math.PI*tm)*170).toFixed(1) + ')');
-    } else moonEl.style.visibility = 'hidden';
-
-    setText($('simClock'), fmtTime(simMinutes));
-    setText($('phase'), phaseOf(h));
-    setText($('btnNext'), isNightMinute(m) ? 'To dawn' : 'To dusk');
-  }
-
-  /* ================= BUILD CARDS ================= */
-  var BULB_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
-      '<g class="rays" stroke-width="1.6"><path d="M12 0.5v1.5M3.5 4l1.1 1.1M20.5 4l-1.1 1.1M0.8 10.5h1.6M21.6 10.5h1.6"/></g>' +
-      '<path class="glass-fill" d="M12 3.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.9 1.2.9 2h5.8c0-.8.3-1.5.9-2A6.5 6.5 0 0 0 12 3.5z"/>' +
-      '<path class="outline" d="M12 3.5a6.5 6.5 0 0 0-3.8 11.8c.6.5.9 1.2.9 2h5.8c0-.8.3-1.5.9-2A6.5 6.5 0 0 0 12 3.5z" stroke-width="1.4"/>' +
-      '<path d="M9.3 19.5h5.4M10.3 22h3.4" stroke="#8c92a1" stroke-width="1.6"/>' +
-    '</svg>';
-  var POWER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v8"/><path d="M17.7 6.8a8 8 0 1 1-11.4 0"/></svg>';
-
-  function buildZones(){
-    var html = '';
-    ZONES.forEach(function(z, zi){
-      html += '<section class="zone reveal" style="animation-delay:' + (zi*0.05) + 's;--zc:' + z.color + '" aria-label="' + z.name + '">' +
-        '<div class="zone-head">' +
-          '<div class="zone-name"><span class="well"><i></i></span><div><h3>' + z.name + '</h3><p id="zinfo-' + z.id + '">0/4 on · 0 W</p></div></div>' +
-          '<div class="zone-actions">' +
-            '<button class="btn" type="button" data-zone-on="' + z.id + '">Zone On</button>' +
-            '<button class="btn" type="button" data-zone-off="' + z.id + '">Zone Off</button>' +
-          '</div>' +
-        '</div><div class="grid">';
-      lights.filter(function(l){ return l.zone === z.id; }).forEach(function(l){
-        html +=
-          '<article class="neu light" id="card-' + l.id + '" data-id="' + l.id + '">' +
-            '<div class="light-top"><div class="bulb">' + BULB_SVG + '</div><span class="badge off" data-role="badge">Off</span></div>' +
-            '<h4>' + l.id + '</h4>' +
-            '<p class="sub">' + z.name + ' · Pole ' + l.pole + '</p>' +
-            '<div class="slider-row">' +
-              '<div class="lbl"><span>Brightness</span><b data-role="pct">0%</b></div>' +
-              '<input type="range" min="0" max="100" step="5" value="' + l.brightness + '" data-role="range" aria-label="Brightness of ' + l.id + '">' +
-            '</div>' +
-            '<div class="meta">' +
-              '<span class="watts" data-role="watts">0 <small>W</small></span>' +
-              '<label class="switch" data-role="switch" title="Turn on/off">' +
-                '<input type="checkbox" data-role="toggle" aria-label="Power ' + l.id + '">' +
-                '<span class="txt" data-role="ttxt">Off</span><span class="knob">' + POWER_ICON + '</span>' +
-              '</label>' +
-            '</div>' +
-            '<button class="btn repair hidden" type="button" data-role="repair">Repair light</button>' +
-          '</article>';
-      });
-      html += '</div></section>';
-    });
-    $('zones').innerHTML = html;
-  }
-
-  /* ================= RENDER ================= */
-  function renderCard(l, animate){
-    var card = $('card-' + l.id);
-    if (!card) return;
-    var st = statusOf(l), lit = isLit(l), wasOn = card.classList.contains('is-on');
-    var b = (l.brightness / 100).toFixed(2);
-
-    card.style.setProperty('--b', b);
-    card.classList.toggle('is-on', lit);
-    card.classList.toggle('is-fault', l.fault);
-    if (animate && lit && !wasOn){ card.classList.remove('pop'); void card.offsetWidth; card.classList.add('pop'); }
-
-    var badge = card.querySelector('[data-role=badge]');
-    badge.className = 'badge ' + st;
-    setText(badge, STATUS_TEXT[st]);
-
-    var range = card.querySelector('[data-role=range]');
-    if (document.activeElement !== range) range.value = l.brightness;
-    range.style.setProperty('--v', l.brightness + '%');
-    range.disabled = l.fault;
-
-    setText(card.querySelector('[data-role=pct]'), l.brightness + '%');
-    var w = card.querySelector('[data-role=watts]'), wt = Math.round(lightPower(l));
-    if (w._t !== wt){ w._t = wt; w.innerHTML = wt + ' <small>W</small>'; }
-
-    var tog = card.querySelector('[data-role=toggle]');
-    tog.checked = l.on && !l.fault;
-    tog.disabled = l.fault;
-    card.querySelector('[data-role=switch]').classList.toggle('disabled', l.fault);
-    setText(card.querySelector('[data-role=ttxt]'), tog.checked ? 'On' : 'Off');
-    card.querySelector('[data-role=repair]').classList.toggle('hidden', !l.fault);
-
-    var lamp = lampEls[l.id];
-    if (lamp){
-      lamp.style.setProperty('--b', b);
-      lamp.classList.toggle('on', lit);
-      lamp.classList.toggle('fault', l.fault);
-    }
-  }
-
-  function renderSummary(){
-    var onCount = lights.filter(isLit).length;
-    var faults = lights.filter(function(l){ return l.fault; }).length;
-    var p = totalPower(), max = lights.length * WATTS_PER_LED;
-
-    setText($('sTotal'), String(lights.length));
-    setText($('sOn'), String(onCount));
-    setText($('sOnFoot'), 'of ' + lights.length + ' lights');
-    setText($('sActive'), onCount + (onCount === 1 ? ' light' : ' lights') + ' active');
-    setText($('sFault'), String(faults));
-    setText($('sFaultFoot'), faults ? faults + ' need repair' : 'All OK · checked ' + fmtTime(lastCheck));
-    $('faultCard').classList.toggle('alert', faults > 0);
-    setText($('sPowerFoot'), Math.round(p / max * 100) + '% of ' + max.toLocaleString('en-IN') + ' W');
-    setText($('chartNow'), Math.round(p).toLocaleString('en-IN') + ' W');
-
-    setNum($('sPower'), p, fInt, 600);
-    setNum($('sEnergy'), energyKWh, f3, 900);
-    setNum($('sCost'), energyKWh * COST_PER_KWH, fRs, 900);
-    setNum($('sSaved'), savedKWh, f3, 900);
-    setText($('sSavedCost'), '₹' + (savedKWh * COST_PER_KWH).toFixed(2) + ' saved');
-    var pct = baselineKWh > 0 ? Math.max(0, Math.min(100, savedKWh / baselineKWh * 100)) : 0;
-    setText($('sSavedFoot'), Math.round(pct) + '% less than all ' + lights.length + ' lights at 100%');
-    $('sSavedBar').style.width = pct.toFixed(1) + '%';
-    setGauge(p / max);
-
-    ZONES.forEach(function(z){
-      var zl = lights.filter(function(l){ return l.zone === z.id; });
-      setText($('zinfo-' + z.id), zl.filter(isLit).length + '/' + zl.length + ' on · ' + Math.round(zonePower(z.id)) + ' W');
-    });
-  }
-
-  function renderAll(animate){
-    lights.forEach(function(l){ renderCard(l, animate); });
-    renderSummary();
-  }
-
-  /* ================= ACTIONS ================= */
-  function setLightOn(l, on){
-    if (l.fault) return;
-    l.on = on;
-    if (on && l.brightness === 0) l.brightness = 100;
-  }
-  function autoSync(){
-    var night = isNightMinute(((simMinutes % 1440) + 1440) % 1440);
-    lights.forEach(function(l){ setLightOn(l, night); });
-  }
-  function autoApply(on){
-    lights.forEach(function(l){ setLightOn(l, on); });
-    renderAll(true);
-    toast(on ? 'Dusk 18:00 – Auto Mode switched all lights ON' : 'Dawn 06:00 – Auto Mode switched all lights OFF', on ? '🌇' : '🌅');
-  }
-  function toggleLamp(id){
-    var l = findLight(id);
-    if (!l) return;
-    if (l.fault){ toast(l.id + ' has a fault – repair it first', '🔧'); return; }
-    setLightOn(l, !isLit(l));
-    renderCard(l, true); renderSummary();
-    toast(l.id + ' switched ' + (l.on ? 'ON' : 'OFF'), l.on ? '💡' : '🌙');
-  }
-
-  function bindEvents(){
-    var root = $('zones');
-
-    root.addEventListener('change', function(e){
-      var t = e.target;
-      if (t.getAttribute('data-role') !== 'toggle') return;
-      var l = findLight(t.closest('.light').getAttribute('data-id'));
-      if (!l) return;
-      setLightOn(l, t.checked);
-      renderCard(l, true); renderSummary();
-    });
-    root.addEventListener('input', function(e){
-      var t = e.target;
-      if (t.getAttribute('data-role') !== 'range') return;
-      var l = findLight(t.closest('.light').getAttribute('data-id'));
-      if (!l || l.fault) return;
-      l.brightness = parseInt(t.value, 10) || 0;
-      if (l.brightness > 0 && !l.on) l.on = true;
-      if (l.brightness === 0) l.on = false;
-      renderCard(l, true); renderSummary();
-    });
-    root.addEventListener('click', function(e){
-      var btn = e.target.closest('button');
-      if (!btn) return;
-      var zOn = btn.getAttribute('data-zone-on'), zOff = btn.getAttribute('data-zone-off');
-      if (zOn || zOff){
-        var zid = zOn || zOff;
-        lights.forEach(function(l){ if (l.zone === zid) setLightOn(l, !!zOn); });
-        renderAll(true);
-        toast(zoneOf(zid).name + ' switched ' + (zOn ? 'ON' : 'OFF'), zOn ? '💡' : '🌙');
-        return;
-      }
-      if (btn.getAttribute('data-role') === 'repair'){
-        var l = findLight(btn.closest('.light').getAttribute('data-id'));
-        if (!l) return;
-        l.fault = false; l.on = true; if (l.brightness === 0) l.brightness = 100;
-        renderCard(l, true); renderSummary();
-        toast(l.id + ' repaired and back online', '🔧');
-      }
-    });
-
-    // click / keyboard on lamps in the street scene
-    sceneSvg.addEventListener('click', function(e){
-      var g = e.target.closest('.lamp');
-      if (g) toggleLamp(g.getAttribute('data-id'));
-    });
-    sceneSvg.addEventListener('keydown', function(e){
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      var g = e.target.closest('.lamp');
-      if (g){ e.preventDefault(); toggleLamp(g.getAttribute('data-id')); }
-    });
-
-    $('btnAllOn').addEventListener('click', function(){
-      lights.forEach(function(l){ setLightOn(l, true); if (!l.fault) l.brightness = 100; });
-      renderAll(true); toast('All lights ON at 100%', '💡');
-    });
-    $('btnAllOff').addEventListener('click', function(){
-      lights.forEach(function(l){ setLightOn(l, false); });
-      renderAll(true); toast('All lights switched OFF', '🌙');
-    });
-    $('btnEco').addEventListener('click', function(){
-      lights.forEach(function(l){ if (!l.fault){ l.on = true; l.brightness = 50; } });
-      renderAll(true); toast('Eco Mode: all lights at 50%', '🌿');
-    });
-
-    $('autoToggle').addEventListener('change', function(e){
-      autoMode = e.target.checked;
-      if (autoMode){
-        autoSync(); renderAll(true);
-        toast('Auto Mode ON – lights follow the sun', '🤖');
-      } else {
-        toast('Auto Mode OFF – manual control', '🖐️');
-      }
-    });
-    $('btnCheck').addEventListener('click', function(){ runHealthCheck(this); });
-    $('themeBtn').addEventListener('click', function(){
-      var dark = !isDark();
-      if (dark) document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme');
-      try { localStorage.setItem('lumen-theme', dark ? 'dark' : 'light'); } catch (e) {}
-      var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.setAttribute('content', dark ? '#23262e' : '#e4e6eb');
-      chartTheme = themeColors();
-      if (powerChart) powerChart.update('none');
-      if (zoneChart) zoneChart.update('none');
-    });
-    $('btnPlus3').addEventListener('click', function(){ fastForward(180); });
-    $('btnNext').addEventListener('click', function(){
-      var m = ((simMinutes % 1440) + 1440) % 1440;
-      var target = isNightMinute(m) ? DAWN : DUSK;
-      fastForward(((target - m) + 1440) % 1440 || 1440);
-    });
-  }
-
-  /* ================= CHARTS ================= */
-  var powerChart = null, zoneChart = null;
-
-  function initCharts(){
-    if (typeof Chart === 'undefined'){
-      document.querySelectorAll('.chart-box').forEach(function(b){
-        b.innerHTML = '<p style="color:#8c92a1;font-size:.85rem;padding:16px">Charts need an internet connection to load Chart.js.</p>';
-      });
-      return;
-    }
-    Chart.defaults.color = '#8c92a1';
-    Chart.defaults.font.family = "'Poppins', sans-serif";
-    Chart.defaults.font.size = 11;
-    var grid = function(){ return chartTheme.grid; }, tickC = function(){ return chartTheme.tick; };
-    function tip(cb){ return { backgroundColor:'#353a46', titleColor:'#fff', bodyColor:'#fff', padding:10, cornerRadius:10, displayColors:false, callbacks:{ label: cb } }; }
-
-    powerChart = new Chart($('powerChart'), {
-      type: 'line',
-      data: { labels: labelHistory, datasets: [{
-        label:'Power (W)', data: powerHistory,
-        borderColor:'#f2a516', borderWidth:3, pointRadius:0, pointHoverRadius:5,
-        pointHoverBackgroundColor:'#f2a516', tension:0.4, fill:true,
-        backgroundColor: function(ctx){
-          var c = ctx.chart, a = c.chartArea;
-          if (!a) return 'rgba(242,165,22,0.12)';
-          var g = c.ctx.createLinearGradient(0, a.top, 0, a.bottom);
-          g.addColorStop(0, 'rgba(242,165,22,0.28)');
-          g.addColorStop(1, 'rgba(242,165,22,0)');
-          return g;
-        }
-      }]},
-      options: {
-        responsive:true, maintainAspectRatio:false,
-        animation:{ duration:650, easing:'easeOutCubic' },
-        interaction:{ mode:'index', intersect:false },
-        plugins:{ legend:{ display:false }, tooltip: tip(function(c){ return Math.round(c.parsed.y) + ' W'; }) },
-        scales:{
-          x:{ grid:{ display:false }, border:{ display:false }, ticks:{ maxTicksLimit:8, maxRotation:0, color:tickC } },
-          y:{ grid:{ color:grid }, border:{ display:false }, beginAtZero:true, suggestedMax:1200, ticks:{ maxTicksLimit:6, color:tickC, callback:function(v){ return v + ' W'; } } }
-        }
-      }
-    });
-
-    zoneChart = new Chart($('zoneChart'), {
-      type: 'bar',
-      data: { labels: ZONES.map(function(z){ return z.name; }), datasets: [{
-        label:'Energy (kWh)', data: ZONES.map(function(z){ return zoneEnergy[z.id]; }),
-        backgroundColor: ZONES.map(function(z){ return z.color; }),
-        borderRadius:12, borderSkipped:false, maxBarThickness:40
-      }]},
-      options: {
-        responsive:true, maintainAspectRatio:false, animation:{ duration:600, easing:'easeOutCubic' },
-        plugins:{ legend:{ display:false }, tooltip: tip(function(c){ return c.parsed.y.toFixed(3) + ' kWh · ₹' + (c.parsed.y * COST_PER_KWH).toFixed(2); }) },
-        scales:{
-          x:{ grid:{ display:false }, border:{ display:false }, ticks:{ color:tickC } },
-          y:{ grid:{ color:grid }, border:{ display:false }, beginAtZero:true, suggestedMax:0.05, ticks:{ maxTicksLimit:6, color:tickC } }
-        }
-      }
-    });
-  }
-
-  function updateCharts(){
-    if (powerChart) powerChart.update();
-    if (zoneChart){
-      zoneChart.data.datasets[0].data = ZONES.map(function(z){ return +zoneEnergy[z.id].toFixed(4); });
-      zoneChart.update();
-    }
-  }
-
-  /* ================= SIMULATION LOOP ================= */
-  function pushHistory(){
-    labelHistory.push(fmtTime(simMinutes));
-    powerHistory.push(Math.round(totalPower()));
-    while (powerHistory.length > HISTORY_POINTS){ powerHistory.shift(); labelHistory.shift(); }
-  }
-
-  function maybeFault(){
-    if (Math.random() > FAULT_CHANCE) return;
-    if (lights.filter(function(l){ return l.fault; }).length >= MAX_FAULTS) return;
-    var pool = lights.filter(isLit);               // only a working, lit light can fail
-    if (!pool.length) return;
-    var l = pool[Math.floor(Math.random() * pool.length)];
-    l.fault = true; lastCheck = simMinutes;
-    renderCard(l, true); renderSummary();
-    toast('Fault detected: ' + l.id + ' (' + zoneOf(l.zone).name + ') stopped responding', '⚠️');
-  }
-
-  function runHealthCheck(btn){
-    if (btn.disabled) return;
-    btn.disabled = true; btn.textContent = 'Scanning…';
-    setTimeout(function(){
-      lastCheck = simMinutes;
-      var bad = lights.filter(function(l){ return l.fault; });
-      btn.disabled = false; btn.textContent = 'Check now';
-      renderSummary();
-      toast(bad.length
-        ? 'Health check: ' + (lights.length - bad.length) + '/' + lights.length + ' OK · faulty: ' + bad.map(function(l){ return l.id; }).join(', ')
-        : 'Health check: all ' + lights.length + ' lights OK', bad.length ? '⚠️' : '✅');
-    }, 900);
-  }
-
-  function minuteStep(){
-    var base = lights.length * WATTS_PER_LED / 1000 / 60, used = 0;
-    ZONES.forEach(function(z){
-      var k = zonePower(z.id) / 1000 / 60;      // 1 sim minute = 1/60 hour
-      zoneEnergy[z.id] += k; energyKWh += k; used += k;
-    });
-    baselineKWh += base; savedKWh += base - used;
-    simMinutes += 1;
-    var m = simMinutes % 1440;
-    if (m === 0){
-      energyKWh = 0; savedKWh = 0; baselineKWh = 0; zoneEnergy = { main:0, market:0, campus:0 };
-      toast('New day started – daily counters reset', '📅');
-    } else if (autoMode && m === DUSK){ autoApply(true); }
-    else if (autoMode && m === DAWN){ autoApply(false); }
-    maybeFault();
-    if (m % 15 === 0) lastCheck = simMinutes;     // automatic health check every 15 sim minutes
-    pushHistory();
-  }
-
-  var timer = 0, nextAt = 0;
-  function stepOnce(){
-    var fast = ff > 0;
-    if (fast) ff--;
-    minuteStep();
-    renderSummary();
-    updateScene();
-    if (!fast || ff % 8 === 0 || ff === 0) updateCharts();
-    if (fast && ff === 0) setFFUI(false);
-  }
-  function schedule(){
-    nextAt += ff > 0 ? 28 : 1000;
-    var d = nextAt - performance.now();
-    if (d < 0){ d = 0; nextAt = performance.now(); }
-    timer = setTimeout(function(){ stepOnce(); schedule(); }, d);
-  }
-  function setFFUI(busy){
-    $('btnPlus3').disabled = busy;
-    $('btnNext').disabled = busy;
-  }
-  function fastForward(mins){
-    if (ff > 0) return;
-    ff = mins; setFFUI(true);
-    clearTimeout(timer); nextAt = performance.now(); schedule();
-  }
-
-  /* ================= SCROLL REVEAL ================= */
-  function setupReveal(){
-    var els = document.querySelectorAll('.reveal');
-    if (!('IntersectionObserver' in window)){
-      els.forEach(function(el){ el.classList.add('done'); });
-      return;
-    }
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(en){
-        if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
-      });
-    }, { threshold: 0.06, rootMargin: '0px 0px -16px 0px' });
-    els.forEach(function(el){
-      el.addEventListener('animationend', function(ev){ if (ev.target === el) el.classList.add('done'); });
-      io.observe(el);
-    });
-  }
-
-  /* ================= SECTION NAV (scroll-spy) ================= */
-  function setupNav(){
-    var links = Array.prototype.slice.call(document.querySelectorAll('.navpill a'));
-    var ids = ['scene-sec', 'overview', 'lights', 'analytics'];
-    var hdr = document.querySelector('header');
-    var ticking = false;
-    function update(){
-      ticking = false;
-      var cur = ids[0];
-      for (var i = 0; i < ids.length; i++){
-        var el = $(ids[i]);
-        if (el && el.getBoundingClientRect().top <= 150) cur = ids[i];
-      }
-      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 6) cur = ids[ids.length - 1];
-      links.forEach(function(a){
-        var on = a.getAttribute('data-nav') === cur;
-        a.classList.toggle('active', on);
-        if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
-        var box = a.parentNode;
-        if (on && box.offsetParent && box.scrollWidth > box.clientWidth) box.scrollTo({ left: a.offsetLeft - (box.clientWidth - a.offsetWidth) / 2, behavior: 'smooth' });
-      });
-      hdr.classList.toggle('scrolled', window.scrollY > 8);
-    }
-    window.addEventListener('scroll', function(){ if (!ticking){ ticking = true; requestAnimationFrame(update); } }, { passive: true });
-    window.addEventListener('resize', update);
-    update();
-  }
-
-  /* ================= INIT ================= */
-  buildGauge();
-  buildScene();
-  buildZones();
-  bindEvents();
-  autoSync();                       // Auto Mode starts ON: it is daytime, so lights start OFF
-  // pre-fill the chart with the 40 minutes before start so it looks full from the first second
-  for (var i = HISTORY_POINTS - 1; i >= 1; i--){ labelHistory.push(fmtTime(simMinutes - i)); powerHistory.push(0); }
-  pushHistory();
-  renderAll(false);
-  updateScene();
-  initCharts();
-  setupReveal();
-  setupNav();
-  nextAt = performance.now();
-  schedule();
-})();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="js/model.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
