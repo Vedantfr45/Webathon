@@ -115,7 +115,7 @@
   @keyframes drift{from{transform:translateX(-160px)}to{transform:translateX(1360px)}}
   #sceneSvg .far rect{fill:var(--far)}
   #sceneSvg .near rect{fill:var(--near)}
-  #sceneSvg .windows{opacity:var(--night)}
+  #sceneSvg .windows{opacity:calc(.2 + .8 * var(--night))}
   #sceneSvg .windows rect{fill:#ffd27a}
   #sceneSvg .walk{fill:var(--walk)}
   #sceneSvg .road{fill:var(--road)}
@@ -395,7 +395,7 @@
     <div class="scene" id="scene">
       <div class="hud">
         <div class="hud-pill time" title="Simulated time: 1 real second = 1 simulated minute">
-          <div class="clock-big" id="simClock">17:55</div>
+          <div class="clock-big" id="simClock">17:50</div>
           <div>
             <div class="phase" id="phase">Daytime</div>
             <small>1 sec = 1 sim minute</small>
@@ -561,7 +561,7 @@
     }
   });
 
-  var simMinutes = 17 * 60 + 55;     // start just before dusk so Auto Mode fires within seconds
+  var simMinutes = 17 * 60 + 50;     // start 10 sim-seconds before dusk so Auto Mode fires right away
   var energyKWh = 0, savedKWh = 0, baselineKWh = 0;
   var zoneEnergy = { main:0, market:0, campus:0 };
   var powerHistory = [], labelHistory = [];
@@ -798,8 +798,8 @@
     s.setProperty('--sky1', rgb(sk[0]));
     s.setProperty('--sky2', rgb(sk[1]));
     s.setProperty('--night', n.toFixed(3));
-    var far = mix(sk[1], [20,26,50], 0.45), nearC = mix(sk[1], [12,15,32], 0.72);
-    var road = mix(sk[1], [22,25,36], 0.85);
+    var far = mix(sk[1], mix([92,110,158], [20,26,50], n), 0.5), nearC = mix(sk[1], mix([58,70,108], [12,15,32], n), 0.74);
+    var road = mix(sk[1], mix([54,60,76], [22,25,36], n), 0.88);
     s.setProperty('--far', rgb(far));
     s.setProperty('--near', rgb(nearC));
     s.setProperty('--road', rgb(road));

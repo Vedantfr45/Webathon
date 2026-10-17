@@ -60,7 +60,7 @@ Just open `index.html` in Chrome. An internet connection is needed for the chart
 
 ## 🎬 Quick demo guide
 
-1. Open the page. It starts at **17:55**, and Auto Mode switches the lights on at 18:00.
+1. Open the page. It starts at **17:50**, and Auto Mode switches the lights on at 18:00.
 2. Click **+3 h** to watch the night scene and the energy counters grow.
 3. Click a lamp in the street, or use a card's slider, to dim or switch a single light.
 4. Try **Eco Mode** and watch the power dial and the "energy saved" card react.
