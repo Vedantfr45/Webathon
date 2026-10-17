@@ -26,6 +26,7 @@ A dashboard to control **12 simulated streetlights** across 3 zones and watch po
 - 🤖 **Auto Mode** – lights switch ON at 18:00 and OFF at 06:00 automatically
 - 🌿 **Energy saved vs always-on** counter that grows over time
 - ⏩ **+3 h** and **To dawn / To dusk** buttons to fast-forward time for demos
+- 🧭 **Sticky section nav** (Street · Overview · Lights · Analytics) that follows you as you scroll and highlights where you are
 
 ---
 
