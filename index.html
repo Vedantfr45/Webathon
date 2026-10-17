@@ -59,8 +59,20 @@
   .live{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(63,174,106,.18);animation:pulse 1.8s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
-  main{padding:18px 0 30px}
-  .label{font-size:.74rem;font-weight:500;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin:44px 0 18px 6px;scroll-margin-top:20px}
+  main{padding:8px 0 30px}
+
+  /* ---------- SECTION NAV (sticky) ---------- */
+  .navbar{position:sticky;top:12px;z-index:50;display:flex;justify-content:center;padding:0 24px;margin:12px 0 6px;pointer-events:none}
+  .navpill{pointer-events:auto;display:flex;gap:6px;padding:6px;border-radius:999px;background:var(--bg);box-shadow:var(--raise);max-width:100%;overflow-x:auto;scrollbar-width:none}
+  .navpill::-webkit-scrollbar{display:none}
+  .navpill a{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;font-size:.82rem;font-weight:500;color:var(--muted);white-space:nowrap;transition:color .25s ease,box-shadow .35s var(--ease)}
+  .navpill a::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.35;transition:background .25s,opacity .25s,box-shadow .25s}
+  .navpill a:hover{color:var(--text)}
+  .navpill a.active{color:var(--text);box-shadow:var(--inset-sm)}
+  .navpill a.active::before{background:var(--amber);opacity:1;box-shadow:0 0 8px var(--amber)}
+  .navpill a:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  #scene-sec,#overview{scroll-margin-top:84px}
+  .label{font-size:.74rem;font-weight:500;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin:44px 0 18px 6px;scroll-margin-top:84px}
 
   /* ---------- LIVE STREET SCENE (the unique bit) ---------- */
   .scene-frame{padding:10px;border-radius:38px;margin-bottom:30px}
@@ -275,6 +287,8 @@
     :root{--raise-lg:8px 8px 18px var(--lo),-8px -8px 18px var(--hi);--raise:5px 5px 12px var(--lo),-5px -5px 12px var(--hi)}
     .wrap{padding:0 16px}
     header{padding-top:18px}
+    .navbar{padding:0 16px;top:8px}
+    .navpill a{padding:9px 14px;font-size:.78rem}
     .hello{flex:1;min-width:0;padding:10px 16px;gap:10px;justify-content:space-between}
     .head-right{width:100%}
     .scene-frame{padding:7px;border-radius:30px;margin-bottom:22px}
@@ -347,10 +361,19 @@
   </div>
 </header>
 
+<nav class="navbar" aria-label="Page sections">
+  <div class="navpill">
+    <a href="#scene-sec" data-nav="scene-sec">Street</a>
+    <a href="#overview" data-nav="overview">Overview</a>
+    <a href="#lights" data-nav="lights">Lights</a>
+    <a href="#analytics" data-nav="analytics">Analytics</a>
+  </div>
+</nav>
+
 <main class="wrap">
 
   <!-- ================= LIVE STREET SCENE ================= -->
-  <section class="neu scene-frame reveal" aria-label="Live city street with day and night sky">
+  <section id="scene-sec" class="neu scene-frame reveal" aria-label="Live city street with day and night sky">
     <div class="scene" id="scene">
       <div class="hud">
         <div class="hud-pill time" title="Simulated time: 1 real second = 1 simulated minute">
@@ -376,7 +399,7 @@
   </section>
 
   <!-- ================= TOP ================= -->
-  <section class="top">
+  <section class="top" id="overview">
     <div class="left-col">
 
       <div class="neu gauge-card reveal">
@@ -461,7 +484,7 @@
   <div class="label" id="lights">Streetlights</div>
   <div id="zones"></div>
 
-  <div class="label">Energy Analytics</div>
+  <div class="label" id="analytics">Energy Analytics</div>
   <section class="charts">
     <div class="neu chart-card reveal">
       <div class="card-head">
@@ -1146,6 +1169,32 @@
     });
   }
 
+  /* ================= SECTION NAV (scroll-spy) ================= */
+  function setupNav(){
+    var links = Array.prototype.slice.call(document.querySelectorAll('.navpill a'));
+    var targets = links.map(function(a){ return $(a.getAttribute('data-nav')); });
+    var ticking = false;
+    function update(){
+      ticking = false;
+      var idx = 0;
+      for (var i = 0; i < targets.length; i++){
+        if (targets[i] && targets[i].getBoundingClientRect().top <= 150) idx = i;
+      }
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 6) idx = targets.length - 1;
+      links.forEach(function(a, i){
+        var on = i === idx;
+        a.classList.toggle('active', on);
+        if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+        if (on && a.scrollIntoView && a.offsetParent && a.parentNode.scrollWidth > a.parentNode.clientWidth){
+          a.parentNode.scrollLeft = a.offsetLeft - 20;   // keep active link visible on small screens
+        }
+      });
+    }
+    window.addEventListener('scroll', function(){ if (!ticking){ ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  }
+
   /* ================= INIT ================= */
   buildGauge();
   buildScene();
@@ -1159,6 +1208,7 @@
   updateScene();
   initCharts();
   setupReveal();
+  setupNav();
   nextAt = performance.now();
   schedule();
 })();
